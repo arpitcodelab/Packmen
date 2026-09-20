@@ -1,6 +1,8 @@
 import { CLASSIC_MAZE_ASCII } from '../src/data/maze.classic';
 import { Maze } from '../src/core/Maze';
 
+declare const process: any;
+
 export interface ValidationResult {
   valid: boolean;
   errors: string[];

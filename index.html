@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#000000" />
+    <title>Packmen - Arcade Maze Chase</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        min-height: -webkit-fill-available;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #0d0e1b 0%, #000000 100%);
+        color: #ffffff;
+        font-family: 'Press Start 2P', monospace, sans-serif;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        overscroll-behavior: none;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+      canvas {
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        box-shadow: 0 0 40px rgba(33, 33, 255, 0.45), 0 0 10px rgba(255, 184, 222, 0.2);
+        border: 2px solid #1919a6;
+        border-radius: 4px;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      /* Native High-Resolution HUD Overlay */
+      #hud-overlay {
+        position: absolute;
+        display: none;
+        justify-content: space-between;
+        align-items: center;
+        pointer-events: none;
+        font-family: 'Press Start 2P', monospace, sans-serif;
+        color: #ffffff;
+        padding: 0 2%;
+        box-sizing: border-box;
+        z-index: 100;
+      }
+      .hud-group {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-shadow: 1px 1px 0 #000000;
+      }
+      .hud-1up {
+        text-align: left;
+        padding-left: 2%;
+        width: 26%;
+      }
+      .hud-high {
+        text-align: center;
+        width: 44%;
+      }
+      .hud-actions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        width: 30%;
+        pointer-events: auto;
+      }
+      .hud-label {
+        color: #ffffff;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
+      }
+      .hud-value {
+        color: #ffffff;
+        letter-spacing: 0.5px;
+      }
+
+      /* Retro Arcade Buttons */
+      .action-btn {
+        pointer-events: auto;
+        background: #111166;
+        border: 1px solid #3333ff;
+        color: #ffff00;
+        font-family: 'Press Start 2P', monospace, sans-serif;
+        font-size: 0.55em;
+        padding: 4px 6px;
+        cursor: pointer;
+        border-radius: 3px;
+        box-shadow: 0 0 6px rgba(33, 33, 255, 0.5);
+        transition: all 0.15s ease;
+        white-space: nowrap;
+        touch-action: manipulation;
+        min-height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .action-btn:hover {
+        background: #2222aa;
+        color: #ffffff;
+        box-shadow: 0 0 10px rgba(51, 51, 255, 0.8);
+        transform: scale(1.05);
+      }
+      .action-btn:active {
+        transform: scale(0.95);
+      }
+      .btn-text-full {
+        display: inline;
+      }
+      .btn-text-short {
+        display: none;
+      }
+
+      /* Game Over Modal Overlay */
+      #game-over-modal {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 14px;
+        background: rgba(10, 10, 26, 0.96);
+        border: 3px solid #ff2222;
+        border-radius: 12px;
+        padding: clamp(20px, 4vh, 28px) clamp(20px, 5vw, 36px);
+        box-shadow: 0 0 50px rgba(255, 34, 34, 0.8), inset 0 0 20px rgba(255, 34, 34, 0.25);
+        z-index: 250;
+        text-align: center;
+        pointer-events: auto;
+        width: min(340px, 90vw);
+        max-width: 90vw;
+        box-sizing: border-box;
+      }
+      .go-title {
+        color: #ff2222;
+        font-size: clamp(16px, 5vw, 20px);
+        letter-spacing: 2px;
+        text-shadow: 0 0 15px rgba(255, 34, 34, 0.9);
+      }
+      .go-subtitle {
+        color: #ff6666;
+        font-size: clamp(8px, 2.5vw, 10px);
+        letter-spacing: 1px;
+      }
+      .go-score-text {
+        color: #ffff00;
+        font-size: clamp(11px, 3.5vw, 13px);
+        letter-spacing: 1px;
+        text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
+      }
+      .play-again-btn {
+        background: linear-gradient(180deg, #ff2222 0%, #b30000 100%);
+        border: 2px solid #ffffff;
+        color: #ffffff;
+        font-family: 'Press Start 2P', monospace;
+        font-size: clamp(10px, 3vw, 12px);
+        padding: 14px 22px;
+        min-height: 48px;
+        cursor: pointer;
+        border-radius: 6px;
+        box-shadow: 0 0 20px rgba(255, 34, 34, 0.9);
+        transition: all 0.15s ease;
+        margin-top: 4px;
+        touch-action: manipulation;
+      }
+      .play-again-btn:hover {
+        background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
+        box-shadow: 0 0 30px rgba(255, 50, 50, 1);
+        transform: scale(1.05);
+      }
+      .play-again-btn:active {
+        transform: scale(0.97);
+      }
+      .go-hint {
+        color: #8888aa;
+        font-size: clamp(7px, 2vw, 8px);
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+      }
+
+      /* Responsive Media Queries */
+      @media (max-width: 480px) {
+        .btn-text-full {
+          display: none;
+        }
+        .btn-text-short {
+          display: inline;
+        }
+        .action-btn {
+          padding: 4px 5px;
+          font-size: 0.5em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="hud-overlay">
+        <div class="hud-group hud-1up">
+          <div class="hud-label">1UP</div>
+          <div id="ui-score" class="hud-value">00</div>
+        </div>
+        <div class="hud-group hud-high">
+          <div class="hud-label">HIGH SCORE</div>
+          <div id="ui-high-score" class="hud-value">10000</div>
+        </div>
+        <div class="hud-group hud-actions">
+          <button id="btn-restart" class="action-btn" title="Restart Game (R)">
+            <span class="btn-text-full">↺ RESTART</span>
+            <span class="btn-text-short">↺</span>
+          </button>
+          <button id="btn-sound" class="action-btn" title="Toggle Sound (M)">🔊</button>
+        </div>
+      </div>
+
+      <div id="game-over-modal">
+        <div class="go-title">GAME OVER</div>
+        <div class="go-subtitle">ATTEMPT FAILED</div>
+        <div class="go-score-text">SCORE: <span id="final-score-display">0</span></div>
+        <button id="btn-play-again" class="play-again-btn">↺ PLAY AGAIN</button>
+        <div class="go-hint">Press ENTER or R to play again</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

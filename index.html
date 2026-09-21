@@ -5,26 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#000000" />
-    <title>Packmen - Arcade Maze Chase</title>
+    <meta name="theme-color" content="#030408" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="assets/extra_life.svg" />
+    <link rel="apple-touch-icon" href="assets/extra_life.svg" />
+    <title>Packmen 2099 - Cyberpunk Arcade Chase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Orbitron:wght@600;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          for (const reg of regs) reg.unregister();
+        });
+        if (typeof caches !== 'undefined') {
+          caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+        }
+      }
+    </script>
     <style>
+      :root {
+        --neon-cyan: #00f3ff;
+        --neon-blue: #1a56ff;
+        --neon-magenta: #ff0077;
+        --neon-gold: #ffd700;
+        --neon-crimson: #ff2a4d;
+        --bg-void: #030408;
+        --glass-panel: rgba(6, 11, 24, 0.88);
+        --glass-border: rgba(0, 243, 255, 0.35);
+        --glass-highlight: rgba(255, 255, 255, 0.15);
+      }
+
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
+
       html, body {
         width: 100%;
         height: 100%;
         height: 100dvh;
         min-height: -webkit-fill-available;
         overflow: hidden;
-        background: radial-gradient(circle at center, #0d0e1b 0%, #000000 100%);
+        background-color: var(--bg-void);
+        background-image: 
+          radial-gradient(circle at 50% 30%, rgba(26, 86, 255, 0.12) 0%, transparent 60%),
+          radial-gradient(circle at 50% 90%, rgba(0, 243, 255, 0.08) 0%, transparent 50%),
+          linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
         color: #ffffff;
-        font-family: 'Press Start 2P', monospace, sans-serif;
+        font-family: 'Chakra Petch', 'Orbitron', monospace, sans-serif;
         touch-action: none;
         user-select: none;
         -webkit-user-select: none;
@@ -34,6 +66,27 @@
         justify-content: center;
         align-items: center;
       }
+
+      /* Subtle Cyber Scanline Overlay */
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.15) 0px,
+          rgba(0, 0, 0, 0.15) 1px,
+          transparent 1px,
+          transparent 2px
+        );
+        opacity: 0.65;
+        z-index: 9999;
+      }
+
       #game-container {
         display: flex;
         justify-content: center;
@@ -42,47 +95,75 @@
         height: 100%;
         position: relative;
         overflow: hidden;
+        perspective: 1000px;
       }
+
       canvas {
         image-rendering: -moz-crisp-edges;
         image-rendering: -webkit-crisp-edges;
         image-rendering: pixelated;
         image-rendering: crisp-edges;
-        box-shadow: 0 0 40px rgba(33, 33, 255, 0.45), 0 0 10px rgba(255, 184, 222, 0.2);
-        border: 2px solid #1919a6;
-        border-radius: 4px;
+        box-shadow: 
+          0 0 0 1px rgba(0, 243, 255, 0.4),
+          0 0 30px rgba(0, 243, 255, 0.25),
+          0 0 70px rgba(26, 86, 255, 0.35),
+          inset 0 0 20px rgba(0, 0, 0, 0.8);
+        border: 2px solid #0055aa;
+        border-radius: 8px;
         max-width: 100%;
         max-height: 100%;
+        background: #000000;
+        transition: box-shadow 0.3s ease;
       }
 
-      /* Native High-Resolution HUD Overlay */
+      /* Native High-Resolution Cyber HUD Overlay */
       #hud-overlay {
         position: absolute;
         display: none;
         justify-content: space-between;
         align-items: center;
         pointer-events: none;
-        font-family: 'Press Start 2P', monospace, sans-serif;
+        font-family: 'Orbitron', 'Chakra Petch', monospace, sans-serif;
         color: #ffffff;
-        padding: 0 2%;
+        padding: 0 8px;
         box-sizing: border-box;
         z-index: 100;
+        background: linear-gradient(180deg, rgba(8, 16, 32, 0.94) 0%, rgba(3, 7, 18, 0.82) 100%);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-bottom: 1.5px solid var(--neon-cyan);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 1px 12px rgba(0, 243, 255, 0.35);
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
       }
+
+      /* Metallic Top Specular Line */
+      #hud-overlay::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 5%;
+        right: 5%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+      }
+
       .hud-group {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        text-shadow: 1px 1px 0 #000000;
       }
+
       .hud-1up {
         text-align: left;
-        padding-left: 2%;
-        width: 26%;
+        width: 28%;
       }
+
       .hud-high {
         text-align: center;
-        width: 44%;
+        width: 42%;
       }
+
       .hud-actions {
         display: flex;
         flex-direction: row;
@@ -92,45 +173,109 @@
         width: 30%;
         pointer-events: auto;
       }
-      .hud-label {
-        color: #ffffff;
-        letter-spacing: 0.5px;
-        margin-bottom: 3px;
-      }
-      .hud-value {
-        color: #ffffff;
-        letter-spacing: 0.5px;
+
+      .hud-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
       }
 
-      /* Retro Arcade Buttons */
+      .hud-label {
+        font-size: 0.62em;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #8be9fd;
+        text-shadow: 0 0 6px rgba(0, 243, 255, 0.6);
+        margin-bottom: 1px;
+      }
+
+      .hud-label-high {
+        color: #ffb86c;
+        text-shadow: 0 0 6px rgba(255, 184, 108, 0.6);
+      }
+
+      .hud-value {
+        font-size: 0.95em;
+        font-weight: 900;
+        letter-spacing: 1.5px;
+        color: #ffffff;
+        text-shadow: 0 0 8px rgba(0, 243, 255, 0.8), 0 0 2px #00f3ff;
+      }
+
+      .hud-value-high {
+        color: #ffd700;
+        text-shadow: 0 0 8px rgba(255, 215, 0, 0.8), 0 0 2px #ffd700;
+      }
+
+      /* Cyber Hardware Control Buttons */
       .action-btn {
         pointer-events: auto;
-        background: #111166;
-        border: 1px solid #3333ff;
-        color: #ffff00;
-        font-family: 'Press Start 2P', monospace, sans-serif;
+        background: linear-gradient(180deg, rgba(18, 30, 58, 0.95) 0%, rgba(8, 14, 28, 0.98) 100%);
+        border: 1px solid rgba(0, 243, 255, 0.5);
+        color: var(--neon-cyan);
+        font-family: 'Orbitron', 'Chakra Petch', monospace, sans-serif;
         font-size: 0.55em;
-        padding: 4px 6px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        padding: 4px 7px;
         cursor: pointer;
-        border-radius: 3px;
-        box-shadow: 0 0 6px rgba(33, 33, 255, 0.5);
-        transition: all 0.15s ease;
+        border-radius: 4px;
+        box-shadow: 
+          0 2px 6px rgba(0, 0, 0, 0.6),
+          0 0 8px rgba(0, 243, 255, 0.25),
+          inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         white-space: nowrap;
         touch-action: manipulation;
-        min-height: 24px;
+        min-height: 22px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 4px;
+        position: relative;
+        overflow: hidden;
       }
+
+      .action-btn::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.2), transparent);
+        transition: left 0.4s ease;
+      }
+
       .action-btn:hover {
-        background: #2222aa;
+        background: linear-gradient(180deg, rgba(28, 48, 90, 0.95) 0%, rgba(12, 22, 44, 0.98) 100%);
+        border-color: #00f3ff;
         color: #ffffff;
-        box-shadow: 0 0 10px rgba(51, 51, 255, 0.8);
-        transform: scale(1.05);
+        box-shadow: 
+          0 0 14px rgba(0, 243, 255, 0.7),
+          inset 0 0 6px rgba(0, 243, 255, 0.4);
+        transform: translateY(-1px) scale(1.04);
       }
+
+      .action-btn:hover::after {
+        left: 100%;
+      }
+
       .action-btn:active {
-        transform: scale(0.95);
+        transform: translateY(1px) scale(0.96);
+        box-shadow: 0 0 6px rgba(0, 243, 255, 0.4);
       }
+
+      .btn-icon {
+        width: 11px;
+        height: 11px;
+        display: inline-block;
+        vertical-align: middle;
+        fill: currentColor;
+        filter: drop-shadow(0 0 2px var(--neon-cyan));
+      }
+
       .btn-text-full {
         display: inline;
       }
@@ -138,73 +283,320 @@
         display: none;
       }
 
-      /* Game Over Modal Overlay */
-      #game-over-modal {
-        display: none;
+      /* Title Screen Overlay */
+      #title-screen {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        inset: 0;
+        display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        gap: 14px;
-        background: rgba(10, 10, 26, 0.96);
-        border: 3px solid #ff2222;
-        border-radius: 12px;
-        padding: clamp(20px, 4vh, 28px) clamp(20px, 5vw, 36px);
-        box-shadow: 0 0 50px rgba(255, 34, 34, 0.8), inset 0 0 20px rgba(255, 34, 34, 0.25);
-        z-index: 250;
-        text-align: center;
-        pointer-events: auto;
-        width: min(340px, 90vw);
-        max-width: 90vw;
+        gap: 24px;
+        background: radial-gradient(circle at center, rgba(10, 18, 38, 0.96) 0%, rgba(3, 4, 8, 0.99) 100%);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        z-index: 300;
+        padding: 20px;
         box-sizing: border-box;
+        text-align: center;
       }
-      .go-title {
-        color: #ff2222;
-        font-size: clamp(16px, 5vw, 20px);
-        letter-spacing: 2px;
-        text-shadow: 0 0 15px rgba(255, 34, 34, 0.9);
-      }
-      .go-subtitle {
-        color: #ff6666;
-        font-size: clamp(8px, 2.5vw, 10px);
-        letter-spacing: 1px;
-      }
-      .go-score-text {
-        color: #ffff00;
-        font-size: clamp(11px, 3.5vw, 13px);
-        letter-spacing: 1px;
-        text-shadow: 0 0 10px rgba(255, 255, 0, 0.6);
-      }
-      .play-again-btn {
-        background: linear-gradient(180deg, #ff2222 0%, #b30000 100%);
-        border: 2px solid #ffffff;
+
+      .title-brand {
+        font-family: 'Orbitron', monospace;
+        font-size: clamp(28px, 8vw, 44px);
+        font-weight: 900;
+        letter-spacing: 6px;
         color: #ffffff;
-        font-family: 'Press Start 2P', monospace;
-        font-size: clamp(10px, 3vw, 12px);
-        padding: 14px 22px;
+        text-shadow: 
+          0 0 10px var(--neon-cyan),
+          0 0 25px var(--neon-cyan),
+          0 0 50px var(--neon-blue);
+      }
+
+      .title-icons-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 12px 24px;
+        background: rgba(6, 12, 26, 0.6);
+        border: 1px solid rgba(0, 243, 255, 0.25);
+        border-radius: 40px;
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.15), inset 0 0 12px rgba(0, 243, 255, 0.1);
+      }
+
+      .title-hero-icon {
+        width: 32px;
+        height: 32px;
+        filter: drop-shadow(0 0 6px var(--neon-gold));
+        transition: transform 0.2s ease;
+      }
+
+      .title-ghost-icon {
+        width: 28px;
+        height: 28px;
+        transition: transform 0.2s ease;
+      }
+
+      .title-hero-icon:hover, .title-ghost-icon:hover {
+        transform: scale(1.15) translateY(-2px);
+      }
+
+      .title-btn {
+        background: linear-gradient(180deg, #00f3ff 0%, #0066cc 100%);
+        border: 2px solid #ffffff;
+        color: #030408;
+        font-family: 'Orbitron', monospace;
+        font-size: clamp(12px, 3.8vw, 15px);
+        font-weight: 900;
+        letter-spacing: 2.5px;
+        padding: 14px 36px;
         min-height: 48px;
         cursor: pointer;
-        border-radius: 6px;
-        box-shadow: 0 0 20px rgba(255, 34, 34, 0.9);
-        transition: all 0.15s ease;
-        margin-top: 4px;
+        border-radius: 8px;
+        box-shadow: 
+          0 0 25px rgba(0, 243, 255, 0.85),
+          inset 0 1px 2px rgba(255, 255, 255, 0.6);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         touch-action: manipulation;
       }
-      .play-again-btn:hover {
-        background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
-        box-shadow: 0 0 30px rgba(255, 50, 50, 1);
+
+      .title-btn:hover {
+        background: linear-gradient(180deg, #66f8ff 0%, #0088ff 100%);
+        box-shadow: 0 0 40px rgba(0, 243, 255, 1);
         transform: scale(1.05);
       }
+
+      .title-btn:active {
+        transform: scale(0.96);
+      }
+
+      .title-btn:hover {
+        background: linear-gradient(180deg, #55f8ff 0%, #0088ff 100%);
+        box-shadow: 0 0 35px rgba(0, 243, 255, 1);
+        transform: scale(1.04);
+      }
+
+      .title-btn:active {
+        transform: scale(0.97);
+      }
+
+      /* Modal Overlays & Cards (Centered via Flexbox) */
+      .modal-overlay {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        background: rgba(3, 4, 8, 0.72);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 250;
+        pointer-events: auto;
+        box-sizing: border-box;
+      }
+
+      .modal-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: clamp(10px, 2.2vh, 14px);
+        background: linear-gradient(180deg, rgba(14, 22, 42, 0.98) 0%, rgba(6, 10, 20, 0.99) 100%);
+        border: 2px solid var(--neon-cyan);
+        border-radius: 12px;
+        padding: clamp(16px, 3.5vh, 26px) clamp(18px, 4.5vw, 32px);
+        box-shadow: 
+          0 0 0 1px rgba(0, 243, 255, 0.4),
+          0 0 40px rgba(0, 243, 255, 0.45),
+          inset 0 0 20px rgba(0, 243, 255, 0.15),
+          0 20px 50px rgba(0, 0, 0, 0.9);
+        text-align: center;
+        width: min(340px, calc(100vw - 32px));
+        max-width: 92vw;
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+
+      .modal-danger {
+        border-color: var(--neon-crimson);
+        box-shadow: 
+          0 0 0 1px rgba(255, 42, 77, 0.4),
+          0 0 45px rgba(255, 42, 77, 0.55),
+          inset 0 0 25px rgba(255, 42, 77, 0.2),
+          0 20px 50px rgba(0, 0, 0, 0.9);
+        animation: modalGlow 2.5s infinite alternate;
+      }
+
+      .pause-title {
+        font-family: 'Orbitron', monospace;
+        color: var(--neon-cyan);
+        font-size: clamp(16px, 4.8vw, 20px);
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-shadow: 0 0 12px rgba(0, 243, 255, 0.8);
+      }
+
+      .pause-subtitle {
+        color: #8be9fd;
+        font-size: clamp(8px, 2.4vw, 10px);
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .modal-btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        margin-top: 4px;
+      }
+
+      .resume-btn {
+        background: linear-gradient(180deg, #00f3ff 0%, #0066cc 100%);
+        border: 1.5px solid #ffffff;
+        color: #030408;
+        font-family: 'Orbitron', monospace;
+        font-size: clamp(10px, 3vw, 12px);
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        padding: 10px 18px;
+        min-height: 40px;
+        cursor: pointer;
+        border-radius: 6px;
+        box-shadow: 0 0 18px rgba(0, 243, 255, 0.6);
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .resume-btn:hover {
+        background: linear-gradient(180deg, #55f8ff 0%, #0088ff 100%);
+        box-shadow: 0 0 28px rgba(0, 243, 255, 0.9);
+        transform: scale(1.03);
+      }
+
+      .pause-restart-btn {
+        background: rgba(18, 30, 58, 0.8);
+        border: 1px solid rgba(0, 243, 255, 0.4);
+        color: #8be9fd;
+        font-family: 'Orbitron', monospace;
+        font-size: clamp(9px, 2.8vw, 11px);
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 8px 14px;
+        min-height: 36px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .pause-restart-btn:hover {
+        background: rgba(28, 48, 90, 0.95);
+        color: #ffffff;
+        border-color: #00f3ff;
+      }
+
+      @keyframes modalGlow {
+        0% { box-shadow: 0 0 35px rgba(255, 42, 77, 0.45), inset 0 0 18px rgba(255, 42, 77, 0.15); }
+        100% { box-shadow: 0 0 55px rgba(255, 42, 77, 0.75), inset 0 0 28px rgba(255, 42, 77, 0.3); }
+      }
+
+      .go-badge-icon {
+        width: 30px;
+        height: 30px;
+        filter: drop-shadow(0 0 8px var(--neon-crimson));
+        margin-bottom: -4px;
+      }
+
+      .go-title {
+        font-family: 'Orbitron', monospace, sans-serif;
+        color: var(--neon-crimson);
+        font-size: clamp(16px, 4.8vw, 22px);
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-shadow: 0 0 14px rgba(255, 42, 77, 0.9), 0 0 2px #ffffff;
+      }
+
+      .go-subtitle {
+        color: #ff7b90;
+        font-size: clamp(8.5px, 2.4vw, 11px);
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      .go-score-box {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(0, 243, 255, 0.4);
+        border-radius: 6px;
+        padding: 6px 14px;
+        width: 100%;
+        box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.15);
+      }
+
+      .go-score-text {
+        font-family: 'Orbitron', monospace;
+        color: var(--neon-gold);
+        font-size: clamp(11.5px, 3.4vw, 15px);
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+      }
+
+      .play-again-btn {
+        background: linear-gradient(180deg, #ff2a4d 0%, #a00028 100%);
+        border: 1.5px solid #ffffff;
+        color: #ffffff;
+        font-family: 'Orbitron', monospace;
+        font-size: clamp(10px, 3vw, 12px);
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        padding: 11px 22px;
+        min-height: 42px;
+        cursor: pointer;
+        border-radius: 6px;
+        box-shadow: 
+          0 0 20px rgba(255, 42, 77, 0.7),
+          inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        margin-top: 2px;
+        touch-action: manipulation;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+      }
+
+      .play-again-btn:hover {
+        background: linear-gradient(180deg, #ff4d6d 0%, #c00030 100%);
+        box-shadow: 0 0 35px rgba(255, 42, 77, 1);
+        transform: scale(1.03);
+      }
+
       .play-again-btn:active {
         transform: scale(0.97);
       }
+
       .go-hint {
-        color: #8888aa;
+        color: #7b8ca8;
         font-size: clamp(7px, 2vw, 8px);
-        letter-spacing: 0.5px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
         margin-top: 2px;
       }
 
@@ -217,41 +609,201 @@
           display: inline;
         }
         .action-btn {
-          padding: 4px 5px;
-          font-size: 0.5em;
+          padding: 4px 6px;
         }
       }
     </style>
-    <script type="module" crossorigin src="./assets/index-C2TS2hrC.js"></script>
+    <script type="module" crossorigin src="./assets/index-B2wq4AZV.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/phaser-0YPJO2g1.js">
   </head>
   <body>
     <div id="game-container">
+      <!-- Title / Start Screen -->
+      <div id="title-screen">
+        <div class="title-brand">PACKMEN</div>
+
+        <!-- Futuristic Cyber Characters Icon Showcase -->
+        <div class="title-icons-row">
+          <!-- Pac-Man Hero SVG -->
+          <svg class="title-hero-icon" viewBox="0 0 100 100">
+            <defs>
+              <radialGradient id="title-p-core" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="30%" stop-color="#fff275"/>
+                <stop offset="70%" stop-color="#ffb703"/>
+                <stop offset="100%" stop-color="#fb8500"/>
+              </radialGradient>
+            </defs>
+            <path d="M 50 50 L 80 20 A 40 40 0 1 0 80 80 Z" fill="url(#title-p-core)"/>
+            <circle cx="50" cy="24" r="5" fill="#ffffff" opacity="0.8"/>
+          </svg>
+
+          <!-- Blinky SVG -->
+          <svg class="title-ghost-icon" viewBox="0 0 120 130">
+            <defs>
+              <linearGradient id="title-blinky" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%" stop-color="#ff7b90"/><stop offset="50%" stop-color="#ff0055"/><stop offset="100%" stop-color="#660020"/>
+              </linearGradient>
+            </defs>
+            <path d="M 20 65 C 20 26 40 14 60 14 C 80 14 100 26 100 65 L 100 105 L 87 95 L 73 105 L 60 95 L 47 105 L 33 95 L 20 105 Z" fill="url(#title-blinky)" stroke="#ff3377" stroke-width="3"/>
+            <ellipse cx="44" cy="50" rx="9" ry="11" fill="#031024" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="46" cy="51" r="5" fill="#00f3ff"/>
+            <ellipse cx="76" cy="50" rx="9" ry="11" fill="#031024" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="78" cy="51" r="5" fill="#00f3ff"/>
+          </svg>
+
+          <!-- Pinky SVG -->
+          <svg class="title-ghost-icon" viewBox="0 0 120 130">
+            <defs>
+              <linearGradient id="title-pinky" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%" stop-color="#ffbbee"/><stop offset="50%" stop-color="#ff44aa"/><stop offset="100%" stop-color="#7a0052"/>
+              </linearGradient>
+            </defs>
+            <path d="M 20 65 C 20 26 40 14 60 14 C 80 14 100 26 100 65 L 100 105 L 87 95 L 73 105 L 60 95 L 47 105 L 33 95 L 20 105 Z" fill="url(#title-pinky)" stroke="#ff77cc" stroke-width="3"/>
+            <ellipse cx="44" cy="50" rx="9" ry="11" fill="#050a1a" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="46" cy="51" r="5" fill="#00f3ff"/>
+            <ellipse cx="76" cy="50" rx="9" ry="11" fill="#050a1a" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="78" cy="51" r="5" fill="#00f3ff"/>
+          </svg>
+
+          <!-- Inky SVG -->
+          <svg class="title-ghost-icon" viewBox="0 0 120 130">
+            <defs>
+              <linearGradient id="title-inky" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%" stop-color="#bbfaff"/><stop offset="50%" stop-color="#00f3ff"/><stop offset="100%" stop-color="#004a6b"/>
+              </linearGradient>
+            </defs>
+            <path d="M 20 65 C 20 26 40 14 60 14 C 80 14 100 26 100 65 L 100 105 L 87 95 L 73 105 L 60 95 L 47 105 L 33 95 L 20 105 Z" fill="url(#title-inky)" stroke="#33ffff" stroke-width="3"/>
+            <ellipse cx="44" cy="50" rx="9" ry="11" fill="#011526" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="46" cy="51" r="5" fill="#00f3ff"/>
+            <ellipse cx="76" cy="50" rx="9" ry="11" fill="#011526" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="78" cy="51" r="5" fill="#00f3ff"/>
+          </svg>
+
+          <!-- Clyde SVG -->
+          <svg class="title-ghost-icon" viewBox="0 0 120 130">
+            <defs>
+              <linearGradient id="title-clyde" x1="20%" y1="0%" x2="80%" y2="100%">
+                <stop offset="0%" stop-color="#ffe4b5"/><stop offset="50%" stop-color="#ff9900"/><stop offset="100%" stop-color="#803d00"/>
+              </linearGradient>
+            </defs>
+            <path d="M 20 65 C 20 26 40 14 60 14 C 80 14 100 26 100 65 L 100 105 L 87 95 L 73 105 L 60 95 L 47 105 L 33 95 L 20 105 Z" fill="url(#title-clyde)" stroke="#ffaa22" stroke-width="3"/>
+            <ellipse cx="44" cy="50" rx="9" ry="11" fill="#140a02" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="46" cy="51" r="5" fill="#00f3ff"/>
+            <ellipse cx="76" cy="50" rx="9" ry="11" fill="#140a02" stroke="#00f3ff" stroke-width="2"/>
+            <circle cx="78" cy="51" r="5" fill="#00f3ff"/>
+          </svg>
+        </div>
+
+        <button id="btn-start-game" class="title-btn">
+          <svg class="btn-icon" style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          PLAY GAME
+        </button>
+      </div>
+
+      <!-- HUD Overlay -->
       <div id="hud-overlay">
         <div class="hud-group hud-1up">
-          <div class="hud-label">1UP</div>
+          <div class="hud-badge">
+            <svg class="btn-icon" viewBox="0 0 24 24">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#00f3ff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="hud-label">1UP</span>
+          </div>
           <div id="ui-score" class="hud-value">00</div>
         </div>
+
         <div class="hud-group hud-high">
-          <div class="hud-label">HIGH SCORE</div>
-          <div id="ui-high-score" class="hud-value">10000</div>
+          <div class="hud-badge">
+            <svg class="btn-icon" style="fill: #ffd700; filter: drop-shadow(0 0 3px #ffd700);" viewBox="0 0 24 24">
+              <path d="M5 3h14l1 6-4 4v5l-4 3-4-3v-5L4 9l1-6z"/>
+            </svg>
+            <span class="hud-label hud-label-high">HIGH SCORE</span>
+          </div>
+          <div id="ui-high-score" class="hud-value hud-value-high">10000</div>
         </div>
+
         <div class="hud-group hud-actions">
-          <button id="btn-restart" class="action-btn" title="Restart Game (R)">
-            <span class="btn-text-full">↺ RESTART</span>
-            <span class="btn-text-short">↺</span>
+          <button id="btn-pause" class="action-btn" title="Pause Game (P/Esc)">
+            <span id="pause-icon-container">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"/>
+                <rect x="14" y="4" width="4" height="16"/>
+              </svg>
+            </span>
+            <span class="btn-text-full">PAUSE</span>
+            <span class="btn-text-short">P</span>
           </button>
-          <button id="btn-sound" class="action-btn" title="Toggle Sound (M)">🔊</button>
+
+          <button id="btn-restart" class="action-btn" title="Restart Game (R)">
+            <!-- Reload loop SVG icon -->
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+            </svg>
+            <span class="btn-text-full">RESTART</span>
+            <span class="btn-text-short">R</span>
+          </button>
+          
+          <button id="btn-sound" class="action-btn" title="Toggle Sound (M)">
+            <!-- Sound Speaker Waveform SVG icon -->
+            <span id="sound-icon-container">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              </svg>
+            </span>
+          </button>
         </div>
       </div>
 
-      <div id="game-over-modal">
-        <div class="go-title">GAME OVER</div>
-        <div class="go-subtitle">ATTEMPT FAILED</div>
-        <div class="go-score-text">SCORE: <span id="final-score-display">0</span></div>
-        <button id="btn-play-again" class="play-again-btn">↺ PLAY AGAIN</button>
-        <div class="go-hint">Press ENTER or R to play again</div>
+      <!-- Pause Overlay & Modal -->
+      <div id="pause-overlay" class="modal-overlay">
+        <div id="pause-modal" class="modal-card">
+          <div class="pause-title">SYSTEM PAUSED</div>
+          <div class="pause-subtitle">NEURAL LINK ON STANDBY</div>
+          <div class="modal-btn-group">
+            <button id="btn-resume" class="resume-btn">
+              <svg class="btn-icon" style="fill: currentColor; width: 14px; height: 14px;" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              RESUME RUN
+            </button>
+            <button id="btn-pause-restart" class="pause-restart-btn">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+              </svg>
+              RE-INITIALIZE
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Over Overlay & Modal -->
+      <div id="game-over-overlay" class="modal-overlay">
+        <div id="game-over-modal" class="modal-card modal-danger">
+          <svg class="go-badge-icon" viewBox="0 0 24 24" fill="none" stroke="#ff2a4d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div class="go-title">GAME OVER</div>
+          <div class="go-subtitle">SYSTEM BREACH / ATTEMPT FAILED</div>
+          <div class="go-score-box">
+            <div class="go-score-text">FINAL DATA: <span id="final-score-display">0</span></div>
+          </div>
+          <button id="btn-play-again" class="play-again-btn">
+            <svg class="btn-icon" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+            </svg>
+            RE-INITIALIZE RUN
+          </button>
+          <div class="go-hint">Press ENTER or R to play again</div>
+        </div>
       </div>
     </div>
   </body>
 </html>
+

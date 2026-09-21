@@ -1,0 +1,19 @@
+{
+  "name": "Packmen 2099 - Cyberpunk Arcade Chase",
+  "short_name": "Packmen 2099",
+  "description": "Premium futuristic cyberpunk arcade maze chase running on 2099 display technology.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#030408",
+  "theme_color": "#030408",
+  "orientation": "portrait-primary",
+  "categories": ["games", "arcade"],
+  "icons": [
+    {
+      "src": "assets/extra_life.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <filter id="fruit-bloom" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="cherry-core" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#ff0055"/>
+      <stop offset="70%" stop-color="#b3003b"/>
+      <stop offset="100%" stop-color="#4d0019"/>
+    </radialGradient>
+  </defs>
+  <!-- Holographic Stems -->
+  <path d="M 68 22 C 58 20 48 30 36 60 M 68 22 C 64 32 60 44 64 62" fill="none" stroke="#00f3ff" stroke-width="3" stroke-linecap="round" filter="url(#fruit-bloom)"/>
+  <!-- Top Data Bracket Node -->
+  <rect x="64" y="18" width="8" height="6" rx="2" fill="#00f3ff" filter="url(#fruit-bloom)"/>
+  <circle cx="68" cy="21" r="1.5" fill="#ffffff"/>
+  <!-- Left Cyber-Cherry Core -->
+  <circle cx="34" cy="68" r="16" fill="url(#cherry-core)" filter="url(#fruit-bloom)"/>
+  <circle cx="34" cy="68" r="16" fill="none" stroke="#ff0077" stroke-width="1.5"/>
+  <circle cx="30" cy="63" r="4.5" fill="#ffffff" opacity="0.85"/>
+  <!-- Right Cyber-Cherry Core -->
+  <circle cx="66" cy="70" r="15" fill="url(#cherry-core)" filter="url(#fruit-bloom)"/>
+  <circle cx="66" cy="70" r="15" fill="none" stroke="#ff0077" stroke-width="1.5"/>
+  <circle cx="62" cy="65" r="4.5" fill="#ffffff" opacity="0.85"/>
+  <!-- Data Sparkles -->
+  <circle cx="20" cy="58" r="1.5" fill="#00f3ff" opacity="0.8"/>
+  <circle cx="82" cy="62" r="1.5" fill="#00f3ff" opacity="0.8"/>
+</svg>

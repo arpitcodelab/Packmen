@@ -4,11 +4,13 @@ import { GameSimulation } from '../../core/GameSimulation';
 import { InputManager } from '../../input/InputManager';
 import { GhostName } from '../../core/types';
 import { AudioManager } from '../../audio/AudioManager';
+import { HapticManager } from '../../input/HapticManager';
 
 export class GameScene extends Phaser.Scene {
   private sim!: GameSimulation;
   private inputManager!: InputManager;
   private audioManager!: AudioManager;
+  private hapticManager!: HapticManager;
   private accumulator = 0;
   private readonly STEP = 1 / 60;
   private readonly MAZE_OFFSET_Y = 24;
@@ -33,6 +35,9 @@ export class GameScene extends Phaser.Scene {
   private flashToggle = false;
   private flashTimer = 0;
 
+  private isPaused = false;
+  private isGameStarted = false;
+
   constructor() {
     super('GameScene');
   }
@@ -45,29 +50,88 @@ export class GameScene extends Phaser.Scene {
     this.audioManager.attachSimulation(this.sim);
     this.audioManager.initSiren('assets/audio/siren_1.mp3');
 
+    this.hapticManager = new HapticManager();
+    this.hapticManager.attachSimulation(this.sim);
+
     this.inputManager = new InputManager();
-    this.inputManager.onDirection((d) => this.sim.setDirection(d));
+    this.inputManager.onDirection((d) => {
+      if (this.isGameStarted && !this.isPaused) {
+        this.sim.setDirection(d);
+      }
+    });
     this.inputManager.onMute(() => {
       this.audioManager.toggleMute();
       this.updateDomHUD();
     });
     this.inputManager.onRestart(() => this.restartGame());
+    this.inputManager.onPause(() => this.togglePause());
 
     // Connect DOM UI controls
     if (typeof document !== 'undefined') {
+      const btnStart = document.getElementById('btn-start-game');
+      if (btnStart) {
+        btnStart.onclick = () => {
+          HapticManager.buttonTap();
+          this.startGame();
+        };
+      }
+
+      const btnPause = document.getElementById('btn-pause');
+      if (btnPause) {
+        btnPause.onclick = () => {
+          HapticManager.buttonTap();
+          this.togglePause();
+        };
+      }
+
+      const btnResume = document.getElementById('btn-resume');
+      if (btnResume) {
+        btnResume.onclick = () => {
+          HapticManager.buttonTap();
+          this.resumeGame();
+        };
+      }
+
+      const btnPauseRestart = document.getElementById('btn-pause-restart');
+      if (btnPauseRestart) {
+        btnPauseRestart.onclick = () => {
+          HapticManager.buttonTap();
+          this.resumeGame();
+          this.restartGame();
+        };
+      }
+
       const btnRestart = document.getElementById('btn-restart');
-      if (btnRestart) btnRestart.onclick = () => this.restartGame();
+      if (btnRestart) {
+        btnRestart.onclick = () => {
+          HapticManager.buttonTap();
+          this.restartGame();
+        };
+      }
 
       const btnSound = document.getElementById('btn-sound');
       if (btnSound) {
         btnSound.onclick = () => {
+          HapticManager.buttonTap();
           this.audioManager.toggleMute();
           this.updateDomHUD();
         };
       }
 
       const btnPlayAgain = document.getElementById('btn-play-again');
-      if (btnPlayAgain) btnPlayAgain.onclick = () => this.restartGame();
+      if (btnPlayAgain) {
+        btnPlayAgain.onclick = () => {
+          HapticManager.buttonTap();
+          this.restartGame();
+        };
+      }
+
+      // Keyboard Start on Title screen
+      window.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (!this.isGameStarted && (e.key === 'Enter' || e.key === ' ' || e.key === 'r' || e.key === 'R')) {
+          this.startGame();
+        }
+      });
 
       // Sync overlay instantly on window resize and orientation flip
       window.addEventListener('resize', () => this.syncOverlayPosition());
@@ -112,11 +176,12 @@ export class GameScene extends Phaser.Scene {
     // 6. Popup Score Image & Text (Depth 150)
     this.popupImage = this.add.image(0, 0, 'score_200').setOrigin(0.5, 0.5).setDepth(150).setVisible(false);
     this.popupText = this.add.text(0, 0, '', {
-      fontFamily: '"Press Start 2P", monospace',
+      fontFamily: '"Orbitron", "Chakra Petch", "Press Start 2P", monospace',
       fontSize: '8px',
-      color: '#00ffff',
-      backgroundColor: '#000000',
-      padding: { x: 2, y: 1 },
+      color: '#00f3ff',
+      stroke: '#003366',
+      strokeThickness: 1.5,
+      padding: { x: 3, y: 1 },
     }).setOrigin(0.5, 0.5).setDepth(150).setVisible(false);
 
     // 7. Center Status Message (Depth 200 - High visibility on top of everything)
@@ -127,26 +192,45 @@ export class GameScene extends Phaser.Scene {
         .setVisible(true);
     }
     this.statusText = this.add.text(CONFIG.WIDTH / 2, this.MAZE_OFFSET_Y + 160, '', {
-      fontFamily: '"Press Start 2P", monospace',
+      fontFamily: '"Orbitron", "Chakra Petch", "Press Start 2P", monospace',
       fontSize: '10px',
-      color: '#ff0000',
-      backgroundColor: '#000000',
+      color: '#ff2a4d',
+      stroke: '#330011',
+      strokeThickness: 2,
       padding: { x: 4, y: 2 },
     }).setOrigin(0.5, 0.5).setDepth(200).setVisible(false);
 
-    // Subscriptions for Score Popups
+    // Subscriptions for Score Popups & Visual Juice
     this.sim.on((e) => {
-      if (e.type === 'GHOST_EATEN' || e.type === 'FRUIT_EATEN') {
+      if (e.type === 'PLAYER_DIED') {
+        this.cameras.main.shake(350, 0.015);
+      } else if (e.type === 'LEVEL_COMPLETE') {
+        this.cameras.main.flash(450, 0, 243, 255);
+      } else if (e.type === 'GHOST_EATEN' || e.type === 'FRUIT_EATEN') {
         const px = (e as any).tile ? (e as any).tile.col * CONFIG.TILE + CONFIG.TILE / 2 : 13 * CONFIG.TILE + CONFIG.TILE / 2;
         const py = this.MAZE_OFFSET_Y + ((e as any).tile ? (e as any).tile.row * CONFIG.TILE + CONFIG.TILE / 2 : 17 * CONFIG.TILE + CONFIG.TILE / 2);
         const textureKey = `score_${e.points}`;
 
         if (this.textures.exists(textureKey)) {
-          this.popupImage.setTexture(textureKey).setPosition(px, py).setVisible(true);
+          this.popupImage.setTexture(textureKey).setPosition(px, py).setAlpha(1).setVisible(true);
           this.popupText.setVisible(false);
+          this.tweens.add({
+            targets: this.popupImage,
+            y: py - 6,
+            alpha: 0.9,
+            duration: 600,
+            ease: 'Power1',
+          });
         } else {
-          this.popupText.setPosition(px, py).setText(`${e.points}`).setVisible(true);
+          this.popupText.setPosition(px, py).setText(`${e.points}`).setAlpha(1).setVisible(true);
           this.popupImage.setVisible(false);
+          this.tweens.add({
+            targets: this.popupText,
+            y: py - 6,
+            alpha: 0.9,
+            duration: 600,
+            ease: 'Power1',
+          });
         }
       }
     });
@@ -156,7 +240,69 @@ export class GameScene extends Phaser.Scene {
     this.updateDomHUD();
   }
 
+  public startGame(): void {
+    this.isGameStarted = true;
+    this.isPaused = false;
+    const titleEl = document.getElementById('title-screen');
+    if (titleEl) titleEl.style.display = 'none';
+    const pauseOverlay = document.getElementById('pause-overlay') || document.getElementById('pause-modal');
+    if (pauseOverlay) pauseOverlay.style.display = 'none';
+    const gameOverOverlay = document.getElementById('game-over-overlay') || document.getElementById('game-over-modal');
+    if (gameOverOverlay) gameOverOverlay.style.display = 'none';
+
+    this.restartGame();
+  }
+
+  public togglePause(): void {
+    if (!this.isGameStarted || this.sim.flow === 'gameOver') return;
+    this.isPaused = !this.isPaused;
+
+    const pauseOverlay = document.getElementById('pause-overlay') || document.getElementById('pause-modal');
+    if (pauseOverlay) {
+      pauseOverlay.style.display = this.isPaused ? 'flex' : 'none';
+    }
+
+    const pauseContainer = document.getElementById('pause-icon-container');
+    if (pauseContainer) {
+      pauseContainer.innerHTML = this.isPaused
+        ? `<svg class="btn-icon" style="fill: currentColor;" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+        : `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    }
+
+    const pauseBtn = document.getElementById('btn-pause');
+    if (pauseBtn) {
+      pauseBtn.title = this.isPaused ? 'Resume Game (P/Esc)' : 'Pause Game (P/Esc)';
+    }
+
+    if (this.isPaused) {
+      this.audioManager.pauseSiren();
+    }
+  }
+
+  public resumeGame(): void {
+    if (!this.isPaused) return;
+    this.isPaused = false;
+    const pauseOverlay = document.getElementById('pause-overlay') || document.getElementById('pause-modal');
+    if (pauseOverlay) pauseOverlay.style.display = 'none';
+
+    const pauseContainer = document.getElementById('pause-icon-container');
+    if (pauseContainer) {
+      pauseContainer.innerHTML = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+    }
+
+    const pauseBtn = document.getElementById('btn-pause');
+    if (pauseBtn) {
+      pauseBtn.title = 'Pause Game (P/Esc)';
+    }
+  }
+
   public restartGame(): void {
+    this.isPaused = false;
+    const pauseOverlay = document.getElementById('pause-overlay') || document.getElementById('pause-modal');
+    if (pauseOverlay) pauseOverlay.style.display = 'none';
+    const gameOverOverlay = document.getElementById('game-over-overlay') || document.getElementById('game-over-modal');
+    if (gameOverOverlay) gameOverOverlay.style.display = 'none';
+
     this.sim.restart();
     this.drawPellets();
     this.updateHUDIndicators();
@@ -171,7 +317,8 @@ export class GameScene extends Phaser.Scene {
     const scoreEl = document.getElementById('ui-score');
     const highScoreEl = document.getElementById('ui-high-score');
     const soundBtn = document.getElementById('btn-sound');
-    const gameOverModal = document.getElementById('game-over-modal');
+    const soundContainer = document.getElementById('sound-icon-container');
+    const gameOverOverlay = document.getElementById('game-over-overlay') || document.getElementById('game-over-modal');
 
     if (scoreEl) {
       scoreEl.textContent = this.sim.score === 0 ? '00' : `${this.sim.score}`;
@@ -179,18 +326,30 @@ export class GameScene extends Phaser.Scene {
     if (highScoreEl) {
       highScoreEl.textContent = `${this.sim.highScore}`;
     }
+    if (soundContainer) {
+      soundContainer.innerHTML = this.audioManager.isMuted
+        ? `<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+           </svg>`
+        : `<svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+           </svg>`;
+    }
     if (soundBtn) {
-      soundBtn.textContent = this.audioManager.isMuted ? '🔇' : '🔊';
       soundBtn.title = this.audioManager.isMuted ? 'Unmute (M)' : 'Mute (M)';
     }
 
-    if (gameOverModal) {
+    if (gameOverOverlay) {
       if (this.sim.flow === 'gameOver') {
-        gameOverModal.style.display = 'flex';
+        gameOverOverlay.style.display = 'flex';
         const finalScore = document.getElementById('final-score-display');
         if (finalScore) finalScore.textContent = `${this.sim.score}`;
       } else {
-        gameOverModal.style.display = 'none';
+        gameOverOverlay.style.display = 'none';
       }
     }
   }
@@ -230,14 +389,14 @@ export class GameScene extends Phaser.Scene {
         const y = offsetY + r * tile;
 
         if (maze.isWall(c, r)) {
-          g.fillStyle(0x2121de, 1);
+          g.fillStyle(0x00f3ff, 0.8);
           g.fillRect(x, y, tile, tile);
-          g.fillStyle(0x000000, 1);
+          g.fillStyle(0x04050a, 1);
           g.fillRect(x + 1, y + 1, tile - 2, tile - 2);
 
           const connect = (nc: number, nr: number, px: number, py: number, w: number, h: number) => {
             if (maze.isWall(nc, nr)) {
-              g.fillStyle(0x000000, 1);
+              g.fillStyle(0x04050a, 1);
               g.fillRect(px, py, w, h);
             }
           };
@@ -246,7 +405,7 @@ export class GameScene extends Phaser.Scene {
           connect(c, r + 1, x + 1, y + tile - 2, tile - 2, 2);
           connect(c, r - 1, x + 1, y, tile - 2, 2);
         } else if (maze.isDoor(c, r)) {
-          g.fillStyle(0xffb8de, 1);
+          g.fillStyle(0xff0077, 1);
           g.fillRect(x, y + tile / 2 - 1, tile, 2);
         }
       }
@@ -268,18 +427,35 @@ export class GameScene extends Phaser.Scene {
       const cx = p.tile.col * CONFIG.TILE + CONFIG.TILE / 2;
       const cy = offsetY + p.tile.row * CONFIG.TILE + CONFIG.TILE / 2;
 
-      // Authentic retro peach color #FAB9B0
-      g.fillStyle(0xfab9b0, 1);
-
       if (p.type === 'dot') {
+        // Quantum Energy Pellet Node
+        // 1. Coronal energy diffusion aura
+        g.fillStyle(0x00f3ff, 0.35);
+        g.fillRect(cx - 1.5, cy - 1.5, 3, 3);
+        // 2. High-energy plasma core
+        g.fillStyle(0xffaacc, 0.9);
         g.fillRect(cx - 1, cy - 1, 2, 2);
+        // 3. Specular bright center highlight
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(cx - 0.5, cy - 0.5, 1, 1);
       } else if (p.type === 'energizer' && this.energizerVisible) {
-        // Authentic pixel energizer (8x8 rounded diamond/circle matching powerPellet.svg)
+        // Futuristic Energizer Reactor Core (Multilayer plasma bloom)
+        // Outer holographic corona
+        g.fillStyle(0x00f3ff, 0.25);
+        g.fillRect(cx - 4, cy - 4, 8, 8);
+        // Energetic plasma shell
+        g.fillStyle(0xffaa00, 0.6);
+        g.fillRect(cx - 3, cy - 3, 6, 6);
+        // Bright radiant diamond core
+        g.fillStyle(0xffe677, 0.95);
         g.fillRect(cx - 2, cy - 4, 4, 1);
         g.fillRect(cx - 3, cy - 3, 6, 1);
         g.fillRect(cx - 4, cy - 2, 8, 4);
         g.fillRect(cx - 3, cy + 2, 6, 1);
         g.fillRect(cx - 2, cy + 3, 4, 1);
+        // Specular white laser center
+        g.fillStyle(0xffffff, 1);
+        g.fillRect(cx - 1.5, cy - 1.5, 3, 3);
       }
     }
     this.lastPelletCount = pellets.remainingCount;
@@ -312,6 +488,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
+    if (!this.isGameStarted || this.isPaused) {
+      this.syncOverlayPosition();
+      return;
+    }
+
     // Fixed timestep accumulator
     this.accumulator += Math.min(deltaMs / 1000, 0.1);
     while (this.accumulator >= this.STEP) {

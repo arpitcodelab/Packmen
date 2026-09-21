@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <filter id="pcore-bloom" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5" result="blur1"/>
+      <feGaussianBlur stdDeviation="2" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="plasma-energy" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#ffee77"/>
+      <stop offset="60%" stop-color="#ffaa00"/>
+      <stop offset="85%" stop-color="#ff0077"/>
+      <stop offset="100%" stop-color="#00f3ff"/>
+    </radialGradient>
+  </defs>
+  <!-- Outer Holographic Reticle Ring -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#00f3ff" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.75"/>
+  <circle cx="50" cy="50" r="32" fill="none" stroke="#ff0077" stroke-width="1.5" stroke-dasharray="16 8" opacity="0.85"/>
+  <!-- Energy Corona -->
+  <circle cx="50" cy="50" r="24" fill="#ffaa00" opacity="0.35" filter="url(#pcore-bloom)"/>
+  <!-- Main Core Sphere -->
+  <circle cx="50" cy="50" r="18" fill="url(#plasma-energy)" filter="url(#pcore-bloom)"/>
+  <!-- Specular Highlights -->
+  <circle cx="44" cy="44" r="5" fill="#ffffff" opacity="0.95"/>
+  <circle cx="42" cy="42" r="2" fill="#ffffff"/>
+  <!-- Orbital Data Points -->
+  <circle cx="50" cy="8" r="2" fill="#00f3ff"/>
+  <circle cx="92" cy="50" r="2" fill="#ff0077"/>
+  <circle cx="50" cy="92" r="2" fill="#00f3ff"/>
+  <circle cx="8" cy="50" r="2" fill="#ffaa00"/>
+</svg>

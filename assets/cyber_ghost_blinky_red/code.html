@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130" width="120" height="130">
+  <defs>
+    <filter id="blinky-bloom" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="blinky-hull" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ff7b90"/>
+      <stop offset="35%" stop-color="#ff0055"/>
+      <stop offset="100%" stop-color="#660020"/>
+    </linearGradient>
+    <radialGradient id="cyber-eye" cx="40%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#00f3ff"/>
+      <stop offset="100%" stop-color="#005577"/>
+    </radialGradient>
+  </defs>
+  <!-- Cyber Ghost Body Shell -->
+  <path d="M 20 65 C 20 26 40 14 60 14 C 80 14 100 26 100 65 L 100 105 L 87 95 L 73 105 L 60 95 L 47 105 L 33 95 L 20 105 Z"
+        fill="url(#blinky-hull)" fill-opacity="0.88" stroke="#ff3377" stroke-width="2.5" filter="url(#blinky-bloom)"/>
+  <!-- Circuit Nodes -->
+  <path d="M 35 44 L 45 44 L 50 54 M 85 44 L 75 44 L 70 54" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <!-- Left Eye Outer Frame -->
+  <ellipse cx="44" cy="50" rx="11" ry="13" fill="#031024" stroke="#00f3ff" stroke-width="2"/>
+  <!-- Left Optical Sensor Pupil -->
+  <circle cx="47" cy="51" r="6" fill="url(#cyber-eye)" filter="url(#blinky-bloom)"/>
+  <circle cx="45" cy="48" r="2" fill="#ffffff"/>
+  <!-- Right Eye Outer Frame -->
+  <ellipse cx="76" cy="50" rx="11" ry="13" fill="#031024" stroke="#00f3ff" stroke-width="2"/>
+  <!-- Right Optical Sensor Pupil -->
+  <circle cx="79" cy="51" r="6" fill="url(#cyber-eye)" filter="url(#blinky-bloom)"/>
+  <circle cx="77" cy="48" r="2" fill="#ffffff"/>
+  <!-- Base Plasma Jet Particles -->
+  <circle cx="33" cy="116" r="2" fill="#ff0055" opacity="0.8"/>
+  <circle cx="60" cy="120" r="2.5" fill="#ff0055" opacity="0.9"/>
+  <circle cx="87" cy="115" r="2" fill="#ff0055" opacity="0.8"/>
+</svg>

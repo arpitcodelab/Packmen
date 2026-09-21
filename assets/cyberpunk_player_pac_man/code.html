@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <filter id="p-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="p-core" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#fff275"/>
+      <stop offset="65%" stop-color="#ffb703"/>
+      <stop offset="100%" stop-color="#fb8500"/>
+    </radialGradient>
+    <linearGradient id="p-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f3ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ff007f" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <!-- Ambient Aura -->
+  <circle cx="50" cy="50" r="44" fill="#ffb703" opacity="0.18" filter="url(#p-glow)"/>
+  <!-- Holographic Reticle Ring -->
+  <circle cx="50" cy="50" r="39" fill="none" stroke="url(#p-ring)" stroke-width="2" stroke-dasharray="10 5" opacity="0.85"/>
+  <!-- Player Body chomp open facing right/up-right -->
+  <path d="M 50 50 L 78 22 A 38 38 0 1 0 78 78 Z" fill="url(#p-core)" filter="url(#p-glow)"/>
+  <!-- Specular Visor Highlight -->
+  <ellipse cx="44" cy="34" rx="9" ry="4.5" fill="#ffffff" opacity="0.8" transform="rotate(-25 44 34)"/>
+  <!-- Inner Data Quantum Core -->
+  <circle cx="50" cy="50" r="4.5" fill="#ffffff" filter="url(#p-glow)"/>
+  <!-- Velocity Particle Sparks -->
+  <circle cx="16" cy="50" r="1.5" fill="#00f3ff" opacity="0.8"/>
+  <circle cx="12" cy="42" r="1" fill="#ffb703" opacity="0.6"/>
+  <circle cx="10" cy="58" r="1" fill="#ff007f" opacity="0.6"/>
+</svg>

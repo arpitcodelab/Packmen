@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" width="60" height="60">
+  <defs>
+    <filter id="pellet-bloom" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="node-plasma" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#ffe6d9"/>
+      <stop offset="85%" stop-color="#ff7b6b"/>
+      <stop offset="100%" stop-color="#ff0077"/>
+    </radialGradient>
+  </defs>
+  <!-- Ambient Corona Ring -->
+  <circle cx="30" cy="30" r="22" fill="none" stroke="#00f3ff" stroke-width="0.75" stroke-dasharray="3 3" opacity="0.4"/>
+  <!-- Soft Glow Base -->
+  <circle cx="30" cy="30" r="12" fill="#ff7b6b" opacity="0.4" filter="url(#pellet-bloom)"/>
+  <!-- Core Holographic Node -->
+  <circle cx="30" cy="30" r="8" fill="url(#node-plasma)" filter="url(#pellet-bloom)"/>
+  <!-- Specular Lens Glint -->
+  <circle cx="28" cy="27" r="2.5" fill="#ffffff" opacity="0.9"/>
+</svg>
